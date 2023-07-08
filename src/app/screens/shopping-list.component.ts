@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Ingredient } from '../models/ingredient.model';
 
 @Component({
   selector: 'app-shopping-list',
@@ -7,9 +8,22 @@ import { Component } from '@angular/core';
       <div class="col-xs-10">
         <app-shopping-edit />
         <hr />
-        <p>The list</p>
+        <ul class="list-group">
+          <a
+            *ngFor="let ingredient of ingredients"
+            class="list-group-item"
+            style="cursor: pointer"
+          >
+            {{ ingredient.name }} ({{ ingredient.amount }})
+          </a>
+        </ul>
       </div>
     </div>
   `,
 })
-export class ShoppingListComponent {}
+export class ShoppingListComponent {
+  ingredients: Ingredient[] = [
+    new Ingredient('Apples', 10),
+    new Ingredient('Tomatos', 5),
+  ];
+}
