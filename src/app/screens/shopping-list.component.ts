@@ -6,7 +6,7 @@ import { Ingredient } from '../models/ingredient.model';
   template: `
     <div class="row">
       <div class="col-xs-10">
-        <app-shopping-edit />
+        <app-shopping-edit (ingrAdded)="onIngAdded($event)" />
         <hr />
         <ul class="list-group">
           <a
@@ -26,4 +26,8 @@ export class ShoppingListComponent {
     new Ingredient('Apples', 10),
     new Ingredient('Tomatos', 5),
   ];
+
+  onIngAdded(ingredient: Ingredient) {
+    this.ingredients.push(ingredient);
+  }
 }
