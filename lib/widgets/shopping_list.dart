@@ -15,54 +15,30 @@ class ShoppingList extends StatefulWidget {
 
 class _ShoppingListState extends State<ShoppingList> {
   List<GroceryItem> _shoppingList = [];
-  var _isLoading = true;
-  String? _error;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadItems();
-  }
-
-  void _loadItems() async {
+  Future<List<GroceryItem>> _loadItems() async {
     final url = Uri.https(
         'shopping-helper-7f4f4-default-rtdb.europe-west1.firebasedatabase.app',
         'shopping-list.json');
 
-    try {
-      final response = await http.get(url);
+    final response = await http.get(url);
+    final Map<String, dynamic> listData = json.decode(response.body);
+    final List<GroceryItem> loadedItems = [];
 
-      if (response.body == 'null') {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-
-      final Map<String, dynamic> listData = json.decode(response.body);
-      final List<GroceryItem> loadedItems = [];
-
-      for (final item in listData.entries) {
-        final category = categories.entries
-            .firstWhere((c) => c.value.title == item.value['category'])
-            .value;
-        loadedItems.add(
-          GroceryItem(
-              id: item.key,
-              name: item.value['name'],
-              quantity: item.value['quantity'],
-              category: category),
-        );
-      }
-
-      setState(() {
-        _shoppingList = loadedItems;
-        _isLoading = false;
-      });
-    } catch (error) {
-      setState(() {
-        _error = 'Failed to fetch data';
-      });
+    for (final item in listData.entries) {
+      final category = categories.entries
+          .firstWhere((c) => c.value.title == item.value['category'])
+          .value;
+      loadedItems.add(
+        GroceryItem(
+            id: item.key,
+            name: item.value['name'],
+            quantity: item.value['quantity'],
+            category: category),
+      );
     }
+    _shoppingList = loadedItems;
+    return loadedItems;
   }
 
   void _addItem() async {
@@ -100,12 +76,6 @@ class _ShoppingListState extends State<ShoppingList> {
 
   @override
   Widget build(BuildContext context) {
-    if (_error != null) {
-      Center(
-        child: Text(_error!),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("Shopping list"),
@@ -116,41 +86,49 @@ class _ShoppingListState extends State<ShoppingList> {
           )
         ],
       ),
-      body: !_isLoading
-          ? _shoppingList.isNotEmpty
-              ? ListView.builder(
-                  itemCount: _shoppingList.length,
-                  itemBuilder: (ctx, index) => Dismissible(
-                    onDismissed: (direction) {
-                      _removeItem(_shoppingList[index]);
-                    },
-                    key: ValueKey(_shoppingList[index].id),
-                    child: ListTile(
-                      title: Text(
-                        _shoppingList[index].name,
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                      leading: Container(
-                        decoration: BoxDecoration(
-                          color: _shoppingList[index].category.color,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        width: 24,
-                        height: 24,
-                      ),
-                      trailing: Text(
-                        _shoppingList[index].quantity.toString(),
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                    ),
+      body: FutureBuilder(
+        future: _loadItems(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            Center(
+              child: Text(snapshot.error.toString()),
+            );
+          }
+          if (snapshot.data!.isEmpty) {
+            const Center(child: Text('No items added'));
+          }
+          return ListView.builder(
+            itemCount: snapshot.data!.length,
+            itemBuilder: (ctx, index) => Dismissible(
+              onDismissed: (direction) {
+                _removeItem(_shoppingList[index]);
+              },
+              key: ValueKey(_shoppingList[index].id),
+              child: ListTile(
+                title: Text(
+                  _shoppingList[index].name,
+                  style: const TextStyle(fontSize: 20),
+                ),
+                leading: Container(
+                  decoration: BoxDecoration(
+                    color: _shoppingList[index].category.color,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                )
-              : const Center(
-                  child: Text('No items added'),
-                )
-          : const Center(
-              child: CircularProgressIndicator(),
+                  width: 24,
+                  height: 24,
+                ),
+                trailing: Text(
+                  _shoppingList[index].quantity.toString(),
+                  style: const TextStyle(fontSize: 20),
+                ),
+              ),
             ),
+          );
+        },
+      ),
     );
   }
 }

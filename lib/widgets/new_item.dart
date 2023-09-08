@@ -24,7 +24,7 @@ class _NewItemState extends State<NewItem> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       setState(() {
-        var _isSending = true;
+        _isSending = true;
       });
       final url = Uri.https(
           'shopping-helper-7f4f4-default-rtdb.europe-west1.firebasedatabase.app',
