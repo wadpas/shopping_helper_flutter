@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shopping_helper_flutter/widgets/shopping_list.dart';
+import 'package:shopping_helper_flutter/screens/new_item.dart';
+import 'package:shopping_helper_flutter/screens/shopping_list.dart';
 
 void main() {
   runApp(const MyApp());
@@ -21,6 +22,10 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.amber[50],
       ),
       home: const ShoppingList(),
+      routes: {
+        '/new-item': (context) => const NewItem(),
+        '/shopping-list': (context) => const ShoppingList(),
+      },
     );
   }
 }
