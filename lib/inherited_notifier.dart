@@ -10,6 +10,7 @@ import 'models/grocery_item.dart';
 final url = Uri.https(
     'comon-database-8a85d-default-rtdb.europe-west1.firebasedatabase.app',
     'shopping-list.json');
+late GroceryItem _groceryItem;
 
 class ShoppingData extends ChangeNotifier {
   List<GroceryItem> _shoppingList = [];
@@ -81,8 +82,6 @@ Future<List<GroceryItem>> loadItems() async {
   return loadedItems;
 }
 
-late GroceryItem _newItem;
-
 Future<void> addItem({
   required String name,
   required int quantity,
@@ -103,15 +102,31 @@ Future<void> addItem({
 
     final Map<String, dynamic> resData = json.decode(response.body);
 
-    _newItem = GroceryItem(
+    _groceryItem = GroceryItem(
       id: resData['name'],
       name: name,
       quantity: quantity,
       category: category,
     );
 
-    shoppingData.addItem(_newItem);
+    shoppingData.addItem(_groceryItem);
   } catch (error) {
-    shoppingData.removeItem(_newItem);
+    shoppingData.removeItem(_groceryItem);
+  }
+}
+
+Future<void> removeItem(GroceryItem item) async {
+  _groceryItem = item;
+  try {
+    final response = await http.delete(Uri.https(
+        'comon-database-8a85d-default-rtdb.europe-west1.firebasedatabase.app',
+        'shopping-list/${item.id}.json'));
+    shoppingData.removeItem(item);
+    if (response.statusCode >= 400) {
+      shoppingData.addItem(_groceryItem);
+      return;
+    }
+  } catch (error) {
+    shoppingData.addItem(_groceryItem);
   }
 }
