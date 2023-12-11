@@ -1,5 +1,3 @@
-import 'package:shopping_helper_flutter/models/category.dart';
-
 class GroceryItem {
   const GroceryItem({
     required this.id,
@@ -11,5 +9,5 @@ class GroceryItem {
   final String id;
   final String name;
   final int quantity;
-  final Category category;
+  final String category;
 }

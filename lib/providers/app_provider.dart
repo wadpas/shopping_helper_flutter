@@ -2,15 +2,17 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shopping_helper_flutter/models/category.dart';
 
-import 'data/categories.dart';
-import 'models/grocery_item.dart';
+import '../models/grocery_item.dart';
 
 final url = Uri.https(
     'comon-database-8a85d-default-rtdb.europe-west1.firebasedatabase.app',
     'shopping-list.json');
 late GroceryItem _groceryItem;
+
+class AppProvider extends ChangeNotifier {
+  List<String> categoryList = [];
+}
 
 class ShoppingData extends ChangeNotifier {
   List<GroceryItem> _shoppingList = [];
@@ -39,7 +41,7 @@ final shoppingData = ShoppingData();
 
 class ShoppingInheritedNotifier extends InheritedNotifier<ShoppingData> {
   const ShoppingInheritedNotifier({
-    Key? super.key,
+    super.key,
     required super.notifier,
     required super.child,
   });
@@ -52,6 +54,7 @@ class ShoppingInheritedNotifier extends InheritedNotifier<ShoppingData> {
       [];
 }
 
+final List<String> categories = [];
 Future<List<GroceryItem>> loadItems() async {
   final response = await http.get(url);
 
@@ -64,18 +67,21 @@ Future<List<GroceryItem>> loadItems() async {
   }
 
   final Map<String, dynamic> listData = json.decode(response.body);
+
+  for (final category in listData['categories'].entries) {
+    categories.add(category.key);
+  }
+
   final List<GroceryItem> loadedItems = [];
 
-  for (final item in listData.entries) {
-    final category = categories.entries
-        .firstWhere((c) => c.value.title == item.value['category'])
-        .value;
+  for (final item in listData['items'].entries) {
     loadedItems.add(
       GroceryItem(
-          id: item.key,
-          name: item.value['name'],
-          quantity: item.value['quantity'],
-          category: category),
+        id: item.key,
+        name: item.value['name'],
+        quantity: item.value['quantity'],
+        category: item.value['category'],
+      ),
     );
   }
   shoppingData.shoppingList = loadedItems;
@@ -85,7 +91,7 @@ Future<List<GroceryItem>> loadItems() async {
 Future<void> addItem({
   required String name,
   required int quantity,
-  required Category category,
+  required String category,
 }) async {
   try {
     final response = await http.post(
@@ -95,7 +101,7 @@ Future<void> addItem({
         {
           'name': name,
           'quantity': quantity,
-          'category': category.title,
+          'category': category,
         },
       ),
     );
@@ -118,9 +124,11 @@ Future<void> addItem({
 Future<void> removeItem(GroceryItem item) async {
   _groceryItem = item;
   try {
-    final response = await http.delete(Uri.https(
-        'comon-database-8a85d-default-rtdb.europe-west1.firebasedatabase.app',
-        'shopping-list/${item.id}.json'));
+    final response = await http.delete(
+      Uri.https(
+          'comon-database-8a85d-default-rtdb.europe-west1.firebasedatabase.app',
+          'shopping-list/${item.id}.json'),
+    );
     shoppingData.removeItem(item);
     if (response.statusCode >= 400) {
       shoppingData.addItem(_groceryItem);

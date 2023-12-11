@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shopping_helper_flutter/inherited_notifier.dart';
+import 'package:shopping_helper_flutter/providers/app_provider.dart';
 
 class ShoppingList extends StatelessWidget {
   const ShoppingList({super.key});
@@ -8,7 +8,7 @@ class ShoppingList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Shopping list"),
+        title: const Text("Shopping Helper"),
         actions: [
           IconButton(
             onPressed: () {
@@ -55,9 +55,7 @@ class ShoppingList extends StatelessWidget {
                       ),
                       leading: Container(
                         decoration: BoxDecoration(
-                          color: ShoppingInheritedNotifier.of(context)[index]
-                              .category
-                              .color,
+                          color: Colors.amber,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         width: 24,

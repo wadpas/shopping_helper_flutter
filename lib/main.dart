@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shopping_helper_flutter/screens/new_item.dart';
 import 'package:shopping_helper_flutter/screens/shopping_list.dart';
 
@@ -12,7 +13,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Groceries',
+      title: 'Shopping Helper',
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -20,6 +21,7 @@ class MyApp extends StatelessWidget {
           surface: Colors.amber[100],
         ),
         scaffoldBackgroundColor: Colors.amber[50],
+        textTheme: GoogleFonts.manropeTextTheme(),
       ),
       home: const ShoppingList(),
       routes: {
