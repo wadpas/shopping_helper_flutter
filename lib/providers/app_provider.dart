@@ -23,131 +23,103 @@ class AppProvider extends ChangeNotifier {
     _productList = loadedData['products'];
     _categoryList = loadedData['categories'];
 
-    print('object');
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> addProduct(Product product) async {
+    isLoading = true;
+    notifyListeners();
+
+    Product newProduct = await saveProduct(product);
+    _productList.add(newProduct);
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> removeProduct(Product product) async {
+    isLoading = true;
+    notifyListeners();
+
+    await deleteProduct(product);
+    _productList.remove(product);
     isLoading = false;
     notifyListeners();
   }
 }
 
-class ShoppingData extends ChangeNotifier {
-  List<Product> _shoppingList = [];
-
-  List<Product> get shoppingList => _shoppingList;
-
-  set shoppingList(List<Product> newShoppingList) {
-    if (newShoppingList != shoppingList) {
-      _shoppingList = newShoppingList;
-      notifyListeners();
-    }
-  }
-
-  void addProduct(Product product) {
-    _shoppingList.add(product);
-    notifyListeners();
-  }
-
-  void removeProduct(Product product) {
-    _shoppingList.remove(product);
-    notifyListeners();
-  }
-}
-
-final shoppingData = ShoppingData();
-
-class ShoppingInheritedNotifier extends InheritedNotifier<ShoppingData> {
-  const ShoppingInheritedNotifier({
-    super.key,
-    required super.notifier,
-    required super.child,
-  });
-
-  static List<Product> of(BuildContext context) =>
-      context
-          .dependOnInheritedWidgetOfExactType<ShoppingInheritedNotifier>()
-          ?.notifier
-          ?.shoppingList ??
-      [];
-}
-
-var categories = [];
-
-Future<Map> loadProducts() async {
-  final response = await http.get(
-    Uri.https(database, 'shopping-list.json'),
-  );
-  await Future.delayed(Durations.extralong3);
-  final Map<String, dynamic> listData = json.decode(response.body);
-
-  final List<Product> loadedProducts = [];
-  for (final product in listData['products'].entries) {
-    loadedProducts.add(
-      Product(
-        id: product.key,
-        name: product.value['name'],
-        quantity: product.value['quantity'],
-        category: product.value['category'],
-      ),
+Future loadProducts() async {
+  try {
+    final response = await http.get(
+      Uri.https(database, 'shopping-list.json'),
     );
-  }
+    await Future.delayed(Durations.extralong3);
+    final Map<String, dynamic> listData = json.decode(response.body);
 
-  final List<String> loadedCategories = [];
-  for (final category in listData['categories'].entries) {
-    loadedCategories.add(category.key);
-  }
+    final List<Product> loadedProducts = [];
+    for (final product in listData['products'].entries) {
+      loadedProducts.add(
+        Product(
+          id: product.key,
+          name: product.value['name'],
+          quantity: product.value['quantity'],
+          category: product.value['category'],
+        ),
+      );
+    }
 
-  return {
-    'products': loadedProducts,
-    'categories': loadedCategories,
-  };
+    final List<String> loadedCategories = [];
+    for (final category in listData['categories'].entries) {
+      loadedCategories.add(category.key);
+    }
+
+    return {
+      'products': loadedProducts,
+      'categories': loadedCategories,
+    };
+  } catch (error) {
+    print(error);
+  }
 }
 
-Future<void> addProduct({
-  required String name,
-  required int quantity,
-  required String category,
-}) async {
+Future saveProduct(Product product) async {
   try {
     final response = await http.post(
       Uri.https(database, 'shopping-list/products.json'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode(
         {
-          'name': name,
-          'quantity': quantity,
-          'category': category,
+          'name': product.name,
+          'quantity': product.quantity,
+          'category': product.category,
         },
       ),
     );
 
-    final Map<String, dynamic> resData = json.decode(response.body);
+    await Future.delayed(Durations.extralong3);
+
+    final Map<String, dynamic> responseData = json.decode(response.body);
 
     _product = Product(
-      id: resData['name'],
-      name: name,
-      quantity: quantity,
-      category: category,
+      id: responseData['name'],
+      name: product.name,
+      quantity: product.quantity,
+      category: product.category,
     );
 
-    shoppingData.addProduct(_product);
+    return _product;
   } catch (error) {
-    shoppingData.removeProduct(_product);
+    print(error);
   }
 }
 
-Future<void> removeProduct(Product product) async {
-  _product = product;
+Future<void> deleteProduct(Product product) async {
   try {
-    final response = await http.delete(
-      Uri.https(
-          'comon-database-8a85d-default-rtdb.europe-west1.firebasedatabase.app',
-          'shopping-list/${product.id}.json'),
+    await http.delete(
+      Uri.https(database, 'shopping-list/products/${product.id}.json'),
     );
-    shoppingData.removeProduct(product);
-    if (response.statusCode >= 400) {
-      shoppingData.addProduct(_product);
-      return;
-    }
+    await Future.delayed(Durations.extralong3);
   } catch (error) {
-    shoppingData.addProduct(_product);
+    print(error);
   }
 }

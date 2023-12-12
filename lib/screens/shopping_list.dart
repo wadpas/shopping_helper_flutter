@@ -33,10 +33,13 @@ class ShoppingList extends StatelessWidget {
                   itemBuilder: (ctx, index) {
                     List<Product> products = value.productList;
                     return Dismissible(
+                      background: Container(
+                        color: Colors.redAccent,
+                      ),
                       onDismissed: (direction) {
-                        removeProduct(products[index]);
+                        deleteProduct(products[index]);
                       },
-                      key: ValueKey(products[index].id),
+                      key: UniqueKey(),
                       child: ListTile(
                         title: Text(
                           products[index].name,
