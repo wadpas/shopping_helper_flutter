@@ -2,23 +2,23 @@ import 'package:flutter/material.dart';
 
 import 'package:shopping_helper_flutter/providers/app_provider.dart';
 
-class NewItem extends StatefulWidget {
-  const NewItem({super.key});
+class NewProduct extends StatefulWidget {
+  const NewProduct({super.key});
 
   @override
-  State<NewItem> createState() => _NewItemState();
+  State<NewProduct> createState() => _NewProductState();
 }
 
-class _NewItemState extends State<NewItem> {
+class _NewProductState extends State<NewProduct> {
   final _formKey = GlobalKey<FormState>();
   var _enteredName = '';
   var _enteredQuantity = 1;
   var _selectedCategory = categories[0];
 
-  void _saveItem() async {
+  void _saveProduct() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      addItem(
+      addProduct(
         name: _enteredName,
         quantity: _enteredQuantity,
         category: _selectedCategory,
@@ -32,7 +32,7 @@ class _NewItemState extends State<NewItem> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add necessary item'),
+        title: const Text('Add necessary product'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(12),
@@ -126,8 +126,8 @@ class _NewItemState extends State<NewItem> {
                       child: const Text('Reset'),
                     ),
                     ElevatedButton(
-                      onPressed: _saveItem,
-                      child: const Text('Add item'),
+                      onPressed: _saveProduct,
+                      child: const Text('Add product'),
                     )
                   ],
                 )

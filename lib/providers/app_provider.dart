@@ -1,38 +1,53 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shopping_helper_flutter/providers/constants.dart';
+import '../models/product.dart';
 
-import '../models/grocery_item.dart';
+late Product _product;
 
-final url = Uri.https(
-    'comon-database-8a85d-default-rtdb.europe-west1.firebasedatabase.app',
-    'shopping-list.json');
-late GroceryItem _groceryItem;
+var aa = AppProvider();
 
 class AppProvider extends ChangeNotifier {
-  List<String> categoryList = [];
+  List<String> _categoryList = [];
+  List<Product> _productList = [];
+  bool isLoading = false;
+
+  List<Product> get productList => _productList;
+  List<String> get categoryList => _categoryList;
+
+  Future<void> fetchData() async {
+    isLoading = true;
+
+    Map loadedData = await loadProducts();
+    _productList = loadedData['products'];
+    _categoryList = loadedData['categories'];
+
+    print('object');
+    isLoading = false;
+    notifyListeners();
+  }
 }
 
 class ShoppingData extends ChangeNotifier {
-  List<GroceryItem> _shoppingList = [];
+  List<Product> _shoppingList = [];
 
-  List<GroceryItem> get shoppingList => _shoppingList;
+  List<Product> get shoppingList => _shoppingList;
 
-  set shoppingList(List<GroceryItem> newShoppingList) {
+  set shoppingList(List<Product> newShoppingList) {
     if (newShoppingList != shoppingList) {
       _shoppingList = newShoppingList;
       notifyListeners();
     }
   }
 
-  void addItem(GroceryItem item) {
-    _shoppingList.add(item);
+  void addProduct(Product product) {
+    _shoppingList.add(product);
     notifyListeners();
   }
 
-  void removeItem(GroceryItem item) {
-    _shoppingList.remove(item);
+  void removeProduct(Product product) {
+    _shoppingList.remove(product);
     notifyListeners();
   }
 }
@@ -46,7 +61,7 @@ class ShoppingInheritedNotifier extends InheritedNotifier<ShoppingData> {
     required super.child,
   });
 
-  static List<GroceryItem> of(BuildContext context) =>
+  static List<Product> of(BuildContext context) =>
       context
           .dependOnInheritedWidgetOfExactType<ShoppingInheritedNotifier>()
           ?.notifier
@@ -54,48 +69,46 @@ class ShoppingInheritedNotifier extends InheritedNotifier<ShoppingData> {
       [];
 }
 
-final List<String> categories = [];
-Future<List<GroceryItem>> loadItems() async {
-  final response = await http.get(url);
+var categories = [];
 
-  if (response.statusCode == 400) {
-    throw Exception('Failed to fetch data');
-  }
-
-  if (response.body == 'null') {
-    return [];
-  }
-
+Future<Map> loadProducts() async {
+  final response = await http.get(
+    Uri.https(database, 'shopping-list.json'),
+  );
+  await Future.delayed(Durations.extralong3);
   final Map<String, dynamic> listData = json.decode(response.body);
 
-  for (final category in listData['categories'].entries) {
-    categories.add(category.key);
-  }
-
-  final List<GroceryItem> loadedItems = [];
-
-  for (final item in listData['items'].entries) {
-    loadedItems.add(
-      GroceryItem(
-        id: item.key,
-        name: item.value['name'],
-        quantity: item.value['quantity'],
-        category: item.value['category'],
+  final List<Product> loadedProducts = [];
+  for (final product in listData['products'].entries) {
+    loadedProducts.add(
+      Product(
+        id: product.key,
+        name: product.value['name'],
+        quantity: product.value['quantity'],
+        category: product.value['category'],
       ),
     );
   }
-  shoppingData.shoppingList = loadedItems;
-  return loadedItems;
+
+  final List<String> loadedCategories = [];
+  for (final category in listData['categories'].entries) {
+    loadedCategories.add(category.key);
+  }
+
+  return {
+    'products': loadedProducts,
+    'categories': loadedCategories,
+  };
 }
 
-Future<void> addItem({
+Future<void> addProduct({
   required String name,
   required int quantity,
   required String category,
 }) async {
   try {
     final response = await http.post(
-      url,
+      Uri.https(database, 'shopping-list/products.json'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode(
         {
@@ -108,33 +121,33 @@ Future<void> addItem({
 
     final Map<String, dynamic> resData = json.decode(response.body);
 
-    _groceryItem = GroceryItem(
+    _product = Product(
       id: resData['name'],
       name: name,
       quantity: quantity,
       category: category,
     );
 
-    shoppingData.addItem(_groceryItem);
+    shoppingData.addProduct(_product);
   } catch (error) {
-    shoppingData.removeItem(_groceryItem);
+    shoppingData.removeProduct(_product);
   }
 }
 
-Future<void> removeItem(GroceryItem item) async {
-  _groceryItem = item;
+Future<void> removeProduct(Product product) async {
+  _product = product;
   try {
     final response = await http.delete(
       Uri.https(
           'comon-database-8a85d-default-rtdb.europe-west1.firebasedatabase.app',
-          'shopping-list/${item.id}.json'),
+          'shopping-list/${product.id}.json'),
     );
-    shoppingData.removeItem(item);
+    shoppingData.removeProduct(product);
     if (response.statusCode >= 400) {
-      shoppingData.addItem(_groceryItem);
+      shoppingData.addProduct(_product);
       return;
     }
   } catch (error) {
-    shoppingData.addItem(_groceryItem);
+    shoppingData.addProduct(_product);
   }
 }

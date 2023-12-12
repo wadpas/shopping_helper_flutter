@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shopping_helper_flutter/models/product.dart';
 import 'package:shopping_helper_flutter/providers/app_provider.dart';
 
 class ShoppingList extends StatelessWidget {
@@ -6,72 +8,57 @@ class ShoppingList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.read<AppProvider>().fetchData();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Shopping Helper"),
         actions: [
           IconButton(
             onPressed: () {
-              Navigator.of(context).pushNamed('/new-item');
+              Navigator.of(context).pushNamed('/new-product');
             },
             icon: const Icon(Icons.add),
           )
         ],
       ),
-      body: ShoppingInheritedNotifier(
-        notifier: shoppingData,
-        child: FutureBuilder(
-          future: loadItems(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              Center(
-                child: Text(snapshot.error.toString()),
-              );
-            }
-            if (snapshot.data == null) {
-              return const Center(
-                child: Text('Can`t get shooping data'),
-              );
-            }
-            if (snapshot.data!.isEmpty) {
-              const Center(child: Text('No items added'));
-            }
-            return ListView.builder(
-                itemCount: snapshot.data!.length,
-                itemBuilder: (ctx, index) {
-                  return Dismissible(
-                    onDismissed: (direction) {
-                      removeItem(ShoppingInheritedNotifier.of(context)[index]);
-                    },
-                    key: ValueKey(
-                        ShoppingInheritedNotifier.of(context)[index].id),
-                    child: ListTile(
-                      title: Text(
-                        ShoppingInheritedNotifier.of(context)[index].name,
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                      leading: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.amber,
-                          borderRadius: BorderRadius.circular(12),
+      body: Consumer<AppProvider>(
+        builder: (context, value, child) {
+          return value.isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(),
+                )
+              : ListView.builder(
+                  itemCount: value.productList.length,
+                  itemBuilder: (ctx, index) {
+                    List<Product> products = value.productList;
+                    return Dismissible(
+                      onDismissed: (direction) {
+                        removeProduct(products[index]);
+                      },
+                      key: ValueKey(products[index].id),
+                      child: ListTile(
+                        title: Text(
+                          products[index].name,
+                          style: const TextStyle(fontSize: 20),
                         ),
-                        width: 24,
-                        height: 24,
+                        leading: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.amber,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          width: 24,
+                          height: 24,
+                        ),
+                        trailing: Text(
+                          products[index].quantity.toString(),
+                          style: const TextStyle(fontSize: 20),
+                        ),
                       ),
-                      trailing: Text(
-                        ShoppingInheritedNotifier.of(context)[index]
-                            .quantity
-                            .toString(),
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                    ),
-                  );
-                });
-          },
-        ),
+                    );
+                  },
+                );
+        },
       ),
     );
   }
