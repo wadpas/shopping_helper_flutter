@@ -31,31 +31,50 @@ class ShoppingList extends StatelessWidget {
               : ListView.builder(
                   itemCount: value.productList.length,
                   itemBuilder: (ctx, index) {
-                    List<Product> products = value.productList;
+                    Product product = value.productList[index];
                     return Dismissible(
                       background: Container(
                         color: Colors.redAccent,
                       ),
                       onDismissed: (direction) {
-                        deleteProduct(products[index]);
+                        deleteProduct(product);
                       },
                       key: UniqueKey(),
                       child: ListTile(
                         title: Text(
-                          products[index].name,
+                          product.name,
                           style: const TextStyle(fontSize: 20),
                         ),
                         leading: Container(
                           decoration: BoxDecoration(
-                            color: Colors.amber,
+                            color:
+                                product.isActive ? Colors.green : Colors.grey,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           width: 24,
                           height: 24,
                         ),
-                        trailing: Text(
-                          products[index].quantity.toString(),
-                          style: const TextStyle(fontSize: 20),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              product.quantity.toString(),
+                              style: const TextStyle(fontSize: 20),
+                            ),
+                            const SizedBox(width: 32),
+                            GestureDetector(
+                              onTap: () => value.toggleActive(product),
+                              child: product.isActive
+                                  ? const Icon(
+                                      Icons.circle_outlined,
+                                      color: Colors.green,
+                                    )
+                                  : const Icon(
+                                      Icons.done,
+                                      color: Colors.red,
+                                    ),
+                            )
+                          ],
                         ),
                       ),
                     );

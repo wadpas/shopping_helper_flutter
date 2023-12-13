@@ -22,16 +22,17 @@ class AppProvider extends ChangeNotifier {
     Map loadedData = await loadProducts();
     _productList = loadedData['products'];
     _categoryList = loadedData['categories'];
+    print('object');
 
     isLoading = false;
     notifyListeners();
   }
 
-  Future<void> addProduct(Product product) async {
+  Future<void> addProduct(name, quantity, category) async {
     isLoading = true;
     notifyListeners();
 
-    Product newProduct = await saveProduct(product);
+    Product newProduct = await saveProduct(name, quantity, category);
     _productList.add(newProduct);
     isLoading = false;
     notifyListeners();
@@ -46,6 +47,16 @@ class AppProvider extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
   }
+
+  Future<void> toggleActive(Product product) async {
+    isLoading = true;
+    notifyListeners();
+
+    await changeActive(product);
+    product.isActive = !product.isActive;
+    isLoading = false;
+    notifyListeners();
+  }
 }
 
 Future loadProducts() async {
@@ -53,7 +64,7 @@ Future loadProducts() async {
     final response = await http.get(
       Uri.https(database, 'shopping-list.json'),
     );
-    await Future.delayed(Durations.extralong3);
+    await Future.delayed(Durations.extralong1);
     final Map<String, dynamic> listData = json.decode(response.body);
 
     final List<Product> loadedProducts = [];
@@ -64,6 +75,7 @@ Future loadProducts() async {
           name: product.value['name'],
           quantity: product.value['quantity'],
           category: product.value['category'],
+          isActive: product.value['isActive'],
         ),
       );
     }
@@ -82,29 +94,31 @@ Future loadProducts() async {
   }
 }
 
-Future saveProduct(Product product) async {
+Future saveProduct(name, quantity, category) async {
   try {
     final response = await http.post(
       Uri.https(database, 'shopping-list/products.json'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode(
         {
-          'name': product.name,
-          'quantity': product.quantity,
-          'category': product.category,
+          'name': name,
+          'quantity': quantity,
+          'category': category,
+          'isActive': true,
         },
       ),
     );
 
-    await Future.delayed(Durations.extralong3);
+    await Future.delayed(Durations.extralong1);
 
     final Map<String, dynamic> responseData = json.decode(response.body);
 
     _product = Product(
       id: responseData['name'],
-      name: product.name,
-      quantity: product.quantity,
-      category: product.category,
+      name: name,
+      quantity: quantity,
+      category: category,
+      isActive: true,
     );
 
     return _product;
@@ -118,7 +132,22 @@ Future<void> deleteProduct(Product product) async {
     await http.delete(
       Uri.https(database, 'shopping-list/products/${product.id}.json'),
     );
-    await Future.delayed(Durations.extralong3);
+    await Future.delayed(Durations.extralong1);
+  } catch (error) {
+    print(error);
+  }
+}
+
+Future<void> changeActive(Product product) async {
+  try {
+    var j = {'isActive': false};
+    var r = await http.patch(
+      Uri.https(database, 'shopping-list/products/${product.id}.json'),
+      body: jsonEncode(
+        {'isActive': !product.isActive},
+      ),
+    );
+    await Future.delayed(Durations.extralong1);
   } catch (error) {
     print(error);
   }

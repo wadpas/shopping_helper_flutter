@@ -1,13 +1,15 @@
 class Product {
-  const Product({
+  Product({
     required this.id,
     required this.name,
     required this.quantity,
     required this.category,
+    required this.isActive,
   });
 
-  final String id;
+  String id;
   final String name;
   final int quantity;
   final String category;
+  bool isActive;
 }

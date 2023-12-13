@@ -23,12 +23,9 @@ class _NewProductState extends State<NewProduct> {
       context
           .read<AppProvider>()
           .addProduct(
-            Product(
-              id: 'id',
-              name: _enteredName,
-              quantity: _enteredQuantity,
-              category: _selectedCategory,
-            ),
+            _enteredName,
+            _enteredQuantity,
+            _selectedCategory,
           )
           .then(
             (_) => Navigator.of(context).pop(),
@@ -102,20 +99,7 @@ class _NewProductState extends State<NewProduct> {
                             for (final category in categories)
                               DropdownMenuItem(
                                 value: category,
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.pink,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      width: 16,
-                                      height: 16,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(category)
-                                  ],
-                                ),
+                                child: Text(category),
                               )
                           ],
                           onChanged: (value) {
