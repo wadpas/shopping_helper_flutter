@@ -19,6 +19,12 @@ class ShoppingList extends StatelessWidget {
               Navigator.of(context).pushNamed('/new-product');
             },
             icon: const Icon(Icons.add),
+          ),
+          IconButton(
+            onPressed: () {
+              context.read<AppProvider>().signOut();
+            },
+            icon: const Icon(Icons.exit_to_app),
           )
         ],
       ),

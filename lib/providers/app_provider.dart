@@ -1,16 +1,15 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:shopping_helper_flutter/providers/constants.dart';
 import '../models/product.dart';
 
-late Product _product;
-
-var aa = AppProvider();
-
 class AppProvider extends ChangeNotifier {
   List<String> _categoryList = [];
   List<Product> _productList = [];
+  String? userId;
   bool isLoading = false;
 
   List<Product> get productList => _productList;
@@ -54,6 +53,37 @@ class AppProvider extends ChangeNotifier {
 
     await changeActive(product);
     product.isActive = !product.isActive;
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> logInWithGoogle() async {
+    isLoading = true;
+    notifyListeners();
+
+    userId = await signInWithGoogle();
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> signInAnonymous() async {
+    isLoading = true;
+    notifyListeners();
+
+    UserCredential userCredential =
+        await FirebaseAuth.instance.signInAnonymously();
+    userId = userCredential.user!.uid;
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> signOut() async {
+    isLoading = true;
+    notifyListeners();
+
+    await FirebaseAuth.instance.signOut();
+    await GoogleSignIn().signOut();
+    userId = null;
     isLoading = false;
     notifyListeners();
   }
@@ -113,7 +143,7 @@ Future saveProduct(name, quantity, category) async {
 
     final Map<String, dynamic> responseData = json.decode(response.body);
 
-    _product = Product(
+    final product = Product(
       id: responseData['name'],
       name: name,
       quantity: quantity,
@@ -121,7 +151,7 @@ Future saveProduct(name, quantity, category) async {
       isActive: true,
     );
 
-    return _product;
+    return product;
   } catch (error) {
     print(error);
   }
@@ -140,8 +170,7 @@ Future<void> deleteProduct(Product product) async {
 
 Future<void> changeActive(Product product) async {
   try {
-    var j = {'isActive': false};
-    var r = await http.patch(
+    await http.patch(
       Uri.https(database, 'shopping-list/products/${product.id}.json'),
       body: jsonEncode(
         {'isActive': !product.isActive},
@@ -150,5 +179,25 @@ Future<void> changeActive(Product product) async {
     await Future.delayed(Durations.extralong1);
   } catch (error) {
     print(error);
+  }
+}
+
+Future<String> signInWithGoogle() async {
+  try {
+    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+    final GoogleSignInAuthentication? googleAuth =
+        await googleUser?.authentication;
+
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth?.accessToken,
+      idToken: googleAuth?.idToken,
+    );
+    UserCredential userCredential =
+        await FirebaseAuth.instance.signInWithCredential(credential);
+    return userCredential.user!.uid;
+  } catch (error) {
+    print(error);
+    return '';
   }
 }
