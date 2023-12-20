@@ -40,9 +40,15 @@ class MyApp extends StatelessWidget {
         ),
         home: Consumer<AppProvider>(
           builder: (context, value, child) {
-            return value.userId == null
-                ? const AuthScreen()
-                : const ShoppingList();
+            return value.isLoading
+                ? const Scaffold(
+                    body: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : value.userId == null
+                    ? const AuthScreen()
+                    : const ShoppingList();
           },
         ),
         routes: {

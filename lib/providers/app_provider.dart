@@ -3,15 +3,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
-import 'package:shopping_helper_flutter/providers/constants.dart';
+import 'package:shopping_helper_flutter/firebase_options.dart';
 import '../models/product.dart';
+
+final dbURL = DefaultFirebaseOptions.android.databaseURL!.substring(8);
 
 class AppProvider extends ChangeNotifier {
   List<String> _categoryList = [];
   List<Product> _productList = [];
   String? userId;
   bool isLoading = false;
-
   List<Product> get productList => _productList;
   List<String> get categoryList => _categoryList;
 
@@ -21,7 +22,6 @@ class AppProvider extends ChangeNotifier {
     Map loadedData = await loadProducts();
     _productList = loadedData['products'];
     _categoryList = loadedData['categories'];
-    print('object');
 
     isLoading = false;
     notifyListeners();
@@ -92,7 +92,7 @@ class AppProvider extends ChangeNotifier {
 Future loadProducts() async {
   try {
     final response = await http.get(
-      Uri.https(database, 'shopping-list.json'),
+      Uri.https(dbURL, 'shopping-list.json'),
     );
     await Future.delayed(Durations.extralong1);
     final Map<String, dynamic> listData = json.decode(response.body);
@@ -127,7 +127,7 @@ Future loadProducts() async {
 Future saveProduct(name, quantity, category) async {
   try {
     final response = await http.post(
-      Uri.https(database, 'shopping-list/products.json'),
+      Uri.https(dbURL, 'shopping-list/products.json'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode(
         {
@@ -160,7 +160,7 @@ Future saveProduct(name, quantity, category) async {
 Future<void> deleteProduct(Product product) async {
   try {
     await http.delete(
-      Uri.https(database, 'shopping-list/products/${product.id}.json'),
+      Uri.https(dbURL, 'shopping-list/products/${product.id}.json'),
     );
     await Future.delayed(Durations.extralong1);
   } catch (error) {
@@ -171,7 +171,7 @@ Future<void> deleteProduct(Product product) async {
 Future<void> changeActive(Product product) async {
   try {
     await http.patch(
-      Uri.https(database, 'shopping-list/products/${product.id}.json'),
+      Uri.https(dbURL, 'shopping-list/products/${product.id}.json'),
       body: jsonEncode(
         {'isActive': !product.isActive},
       ),
